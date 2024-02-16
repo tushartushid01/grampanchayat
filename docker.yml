@@ -1,0 +1,25 @@
+#ARG GO_VERSION=1.14.3
+FROM golang:alpine as grampanchayat-server
+  # Set necessary environmet variables needed for our image
+ENV GO111MODULE=on \
+CGO_ENABLED=0 \
+GOOS=linux \
+GOARCH=amd64
+
+WORKDIR /server
+COPY go.mod go.sum ./
+RUN go mod download
+
+ADD . .
+RUN go build -o bin/grampanchayat-server cmd/main.go
+
+
+FROM alpine:latest
+
+WORKDIR /
+
+COPY --from=grampanchayat-server /server/bin .
+COPY --from=grampanchayat-server /server/database/migrations ./database/migrations
+
+EXPOSE 8091
+ENTRYPOINT ["./grampanchayat-server"]
